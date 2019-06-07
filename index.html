@@ -92,8 +92,8 @@ var Screen = {
 class Map  {
   static game;
   static walls = null; // 0:empty, 1: wall
-  static height = 29;
-  static width = 29;
+  static height = 5;
+  static width = 5;
   static display = {
     x: 10,
     y: 10
@@ -111,7 +111,7 @@ class Map  {
     this.walls = Array.from(Array(this.width),
     () => Array(this.height).fill(0));
 
-    for (var i = 0; i < 10; i++)
+    for (var i = 0; i < 3; i++)
       this.genWalls();
   }
 
@@ -230,7 +230,7 @@ class Box extends block {
   setXY(xy) {
     super.setXY(xy);
     if (Map.onTarget(this)) {
-      console.log("good!");
+      // console.log("good!");
       this.color = Screen.colors.box2;
     } else {
       this.color = Screen.colors.box;
@@ -293,7 +293,7 @@ var Game = {
     this.boxs = [];
     this.targets = [];
 
-    for (var i = 0; i < 3; i++) {
+    for (var i = 0; i < 2; i++) {
         this.boxs.push(new Box());
         this.targets.push(new Target());
     }
@@ -326,6 +326,94 @@ var Game = {
 
     // display map
     Screen.display();
+  },
+  path: [],
+  shortpath: null,
+  status: [],
+  dfs() {
+    var player = this.player;
+    var boxs = this.boxs;
+    var cur = {x:player.x, y:player.y};
+    var boxsCur = boxs.map((item) => {
+      return {x: item.x, y: item.y};
+    });
+
+    var status = this.status;
+    // in status
+    if (status.find((sit) => {
+        return sit.player.x == cur.x && sit.player.y == cur.y &&
+            sit.boxs.every((item) => {
+              return boxsCur.find((curit) => {
+                  return (item.x === curit.x && item.y === curit.y);
+                })
+          })
+      }))
+      return false;
+
+    status.push({
+      player: cur,
+      boxs: boxsCur
+    });
+
+    // all boxs puted
+    if (Map.isWin()) {
+      console.log(this.path);
+      if (this.shortpath === null || this.shortpath.length > this.path.length)
+        this.shortpath = this.path.slice();
+      console.log("win");
+      return true;
+    }
+
+    // all direction
+    var result = false;
+    for (var it in Direction) {
+      var next = Direction[it];
+      this.path.push(it);
+      // next pos can move
+      if (player.move(next)) {
+        if (result == false)
+          result = this.dfs();
+        else
+          this.dfs();
+
+        // recover cur and boxs
+        player.setXY(cur);
+
+        boxs.forEach((item, i) => item.setXY(boxsCur[i]));
+
+      }
+
+      /*if (result == true) {
+        return true;
+      }*/
+      this.path.pop();
+    }
+
+    return result;
+  },
+
+  solve() {
+    this.status = [];
+    this.shortpath = null;
+    return this.dfs();
+  },
+
+  startWithSolve() {
+    this.start();
+    while (!this.solve())
+      this.start();
+  },
+
+  showShortpath() {
+    var traversing = setInterval(() => {
+      this.player.move(Direction[this.shortpath.shift()]);
+      Screen.display();
+
+      if (this.shortpath.length == 0) {
+        clearInterval(traversing);
+        console.log("done");
+      }
+    }, 200);
   }
 };
 

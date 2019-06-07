@@ -227,7 +227,7 @@ class Box extends block {
 
   move(direction) {
     var result = super.move(direction);
-    if (Map.onTarget({x: this.x, y: this.y})) {
+    if (Map.onTarget(this)) {
       console.log("good!");
       this.color = Screen.colors.box2;
     } else {

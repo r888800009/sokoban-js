@@ -193,6 +193,11 @@ class block {
     this.y = pos.y;
   }
 
+  setXY(xy) {
+    this.x = xy.x;
+    this.y = xy.y;
+  }
+
   move(direction) {
     var cur = {x: this.x, y: this.y};
     cur = getNextXY(cur, direction, Map.width, Map.height);
@@ -205,8 +210,7 @@ class block {
       movedFront = false;
 
     if (movedFront) {
-      this.x = cur.x;
-      this.y = cur.y;
+      this.setXY(cur);
       return true;
     } else {
       return false;
@@ -221,15 +225,14 @@ class Player extends block {
 class Box extends block {
   color = Screen.colors.box;
 
-  move(direction) {
-    var result = super.move(direction);
+  setXY(xy) {
+    super.setXY(xy);
     if (Map.onTarget(this)) {
       console.log("good!");
       this.color = Screen.colors.box2;
     } else {
       this.color = Screen.colors.box;
     }
-    return result;
   }
 }
 

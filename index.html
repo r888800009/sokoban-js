@@ -137,7 +137,9 @@ class Map  {
       for (var y = 0; y < this.height; y++) {
         if (typeof entrys.find((item) => 
           item !== null && item.x === x && item.y === y
-        ) === 'undefined')
+          ) === 'undefined' && this.walls[x][y] != 1 &&
+          !this.onTarget({x: x, y: y})
+        )
           emptyPoints.push({ x: x, y: y });
       }
     }

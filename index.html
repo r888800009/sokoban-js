@@ -171,6 +171,12 @@ class Map  {
           return (item !== null && item.x === cur.x && item.y === cur.y);
     });
   }
+
+  static isWin() {
+    return !this.game.boxs.find((item) => {
+          return !this.onTarget(item);
+    });
+  }
 };
 
 var Direction = {

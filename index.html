@@ -152,6 +152,9 @@ class Map  {
   }
 
   static getType(cur) {
+    if (cur.x < 0 || cur.y < 0 || cur.x >= this.width || cur.y >= this.height)
+      return 'wall';
+
     if (this.walls[cur.x][cur.y] == 1)
       return 'wall';
 

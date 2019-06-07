@@ -58,9 +58,7 @@ var Screen = {
     }
 
     // paint entrys
-    this.entrys.forEach((e) => {
-      this.blockPaint(e.x, e.y, e.color);
-    });
+    this.entrys.forEach((e) => this.blockPaint(e.x, e.y, e.color));
 
     // gameover or pause
     if (Game.isGameover) {
@@ -137,9 +135,9 @@ class Map  {
     // filtering an empty block
     for (var x = 0; x < this.width; x++) {
       for (var y = 0; y < this.height; y++) {
-        if (typeof entrys.find((item) => {
-          return (item !== null && item.x === x && item.y === y);
-        }) === 'undefined')
+        if (typeof entrys.find((item) => 
+          item !== null && item.x === x && item.y === y
+        ) === 'undefined')
           emptyPoints.push({ x: x, y: y });
       }
     }
@@ -159,23 +157,21 @@ class Map  {
       return 'wall';
 
     var entrys = this.genEntrysList();
-    return entrys.find((item) => {
-          return (item !== null && item.x === cur.x && item.y === cur.y);
-    })
+    return entrys.find((item) =>
+      item !== null && item.x === cur.x && item.y === cur.y
+    );
   }
 
   static onTarget(cur) {
     var game = this.game;
     var entrys = game.targets;
-    return entrys.find((item) => {
-          return (item !== null && item.x === cur.x && item.y === cur.y);
-    });
+    return entrys.find((item) =>
+          item !== null && item.x === cur.x && item.y === cur.y
+    );
   }
 
   static isWin() {
-    return !this.game.boxs.find((item) => {
-          return !this.onTarget(item);
-    });
+    return this.game.boxs.every((item) => this.onTarget(item));
   }
 };
 
@@ -298,8 +294,8 @@ var Game = {
     }
 
     Screen.clear();
-    this.targets.forEach((e) => {Screen.addEntry(e);});
-    this.boxs.forEach((e) => {Screen.addEntry(e);});
+    this.targets.forEach((e) => Screen.addEntry(e));
+    this.boxs.forEach((e) => Screen.addEntry(e));
     Screen.addEntry(this.player);
   },
 

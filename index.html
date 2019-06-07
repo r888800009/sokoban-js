@@ -1,0 +1,403 @@
+<html>
+<!--
+  vim: shiftwidth=2 tabstop=2
+-->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+<body>
+<canvas id="Screen" width="100%" height="100%" style="border:none; padding: 0; display: block;"></canvas>
+<style>
+  body {
+    margin: 0;
+  }
+</style>
+<script>
+var keyBool = new Array(128).fill(false);
+var Screen = {
+  width: 600,
+  height: 600,
+  context: null,
+  blockSize: 20,
+
+  entrys: [],
+
+  colors: {
+    background: "#000",
+    player: "#fff200",
+    nothing: "#00000000",
+    wall: "#555",
+    box: "#844f00",
+    box2: "#938267",
+    target: "#0000cc",
+    backBlock: "#000000",
+    pause: "#333333AA",
+    gameover: "#ffffff"
+  },
+
+  addEntry(entry) {
+    this.entrys.push(entry);
+  },
+
+  clear(){
+    this.entrys = [];
+  },
+
+  display() {
+    context = this.context;
+    colors = this.colors;
+
+    // clean Screen
+    context.fillStyle = colors.background;
+    context.fillRect(0, 0, Screen.width, Screen.height);
+
+    // paint map
+    for (var x = 0; x < Map.width; x++) {
+      for (var y = 0; y < Map.height; y++) {
+        if (Map.walls[x][y] == 1)
+          this.blockPaint(x, y, this.colors.wall);
+      }
+    }
+
+    // paint entrys
+    this.entrys.forEach((e) => {
+      this.blockPaint(e.x, e.y, e.color);
+    });
+
+    // gameover or pause
+    if (Game.isGameover) {
+      // draw background
+      context.fillStyle = colors.pause;
+      context.fillRect(0, 0, Screen.width, Screen.height);
+
+      context.fillStyle = colors.gameover;
+      context.textBaseline = "middle";
+      context.font = "30px Arial";
+      context.fillText("GameOver", 20, 20);
+      context.fillText("Length: " + Game.snake.length(), 20, 50);
+    } else if (Game.pause) {
+      context.fillStyle = colors.pause;
+      context.fillRect(0, 0, Screen.width, Screen.height);
+    }
+  },
+
+  blockPaint( x, y, useBlackground) {
+    context = Screen.context;
+    colors = Screen.colors;
+
+    context.fillStyle = useBlackground;
+
+    context.fillRect(Map.display.x + (this.blockSize) * x + 1,
+      Map.display.y + (this.blockSize) * y + 1,
+      this.blockSize - 2, this.blockSize - 2);
+  }
+};
+
+class Map  {
+  static game;
+  static walls = null; // 0:empty, 1: wall
+  static height = 29;
+  static width = 29;
+  static display = {
+    x: 10,
+    y: 10
+  };
+
+  static genWalls() {
+    var pos = this.getEmptyPoint();
+    this.walls[pos.x][pos.y] = 1;
+  }
+
+  static newMap(getGame) {
+    this.game = getGame;
+
+    // allocation new map data
+    this.walls = Array.from(Array(this.width),
+    () => Array(this.height).fill(0));
+
+    for (var i = 0; i < 10; i++)
+      this.genWalls();
+  }
+
+  static genEntrysList() {
+    var entrys = [];
+    var game = this.game;
+
+    entrys = entrys.concat(game.boxs);
+    entrys.push(game.player);
+
+    return entrys;
+  }
+
+  static getEmptyPoint() {
+    var result = null;
+    var emptyPoints = [];
+
+    // add entrys
+    var entrys = this.genEntrysList();
+
+    // filtering an empty block
+    for (var x = 0; x < this.width; x++) {
+      for (var y = 0; y < this.height; y++) {
+        if (typeof entrys.find((item) => {
+          return (item !== null && item.x === x && item.y === y);
+        }) === 'undefined')
+          emptyPoints.push({ x: x, y: y });
+      }
+    }
+
+    // pick one point
+    if (emptyPoints.length > 0)
+      result = emptyPoints[Math.floor(Math.random() * emptyPoints.length)];
+
+    return result;
+  }
+
+  static getType(cur) {
+    if (this.walls[cur.x][cur.y] == 1)
+      return 'wall';
+
+    var entrys = this.genEntrysList();
+    return entrys.find((item) => {
+          return (item !== null && item.x === cur.x && item.y === cur.y);
+    })
+  }
+
+  static onTarget(cur) {
+    var game = this.game;
+    var entrys = game.targets;
+    return entrys.find((item) => {
+          return (item !== null && item.x === cur.x && item.y === cur.y);
+    });
+  }
+};
+
+var Direction = {
+  Right: 1,
+  Left: 2,
+  Down: 3,
+  Up: 4
+};
+
+class block {
+  x = 0;
+  y = 0;
+  color = Screen.colors.nothing;
+
+  constructor() {
+    var pos = Map.getEmptyPoint();
+    this.x = pos.x;
+    this.y = pos.y;
+  }
+
+  move(direction) {
+    var cur = {x: this.x, y: this.y};
+    cur = getNextXY(cur, direction, Map.width, Map.height);
+
+    var movedFront = true;
+    var front = Map.getType(cur);
+    if (front instanceof Box)
+      movedFront = front.move(direction);
+    if (front === 'wall')
+      movedFront = false;
+
+    if (movedFront) {
+      this.x = cur.x;
+      this.y = cur.y;
+      return true;
+    } else {
+      return false;
+    }
+  }
+}
+
+class Player extends block {
+  color = Screen.colors.player;
+}
+
+class Box extends block {
+  color = Screen.colors.box;
+
+  move(direction) {
+    var result = super.move(direction);
+    if (Map.onTarget({x: this.x, y: this.y})) {
+      console.log("good!");
+      this.color = Screen.colors.box2;
+    } else {
+      this.color = Screen.colors.box;
+    }
+    return result;
+  }
+}
+
+class Target {
+  x = 0;
+  y = 0;
+  color = Screen.colors.target;
+
+  constructor() {
+    var pos = Map.getEmptyPoint();
+    this.x = pos.x;
+    this.y = pos.y;
+  }
+}
+
+function getNextXY(curXY, direction, width, height) {
+  switch (direction) {
+    case Direction.Right:
+      curXY.x++;
+      break;
+
+    case Direction.Left:
+      curXY.x--;
+      break;
+
+    case Direction.Up:
+      curXY.y--;
+      break;
+
+    case Direction.Down:
+      curXY.y++;
+      break;
+  }
+
+  // bounder
+  // curXY.x = (width + curXY.x) % width;
+  // curXY.y = (height + curXY.y) % height;
+
+  return curXY;
+}
+
+var Game = {
+  running: false,
+  pause: false,
+  isGameover: false,
+  speed: 0,
+  player: null,
+  boxs: [],
+  targets: [],
+  displayTimer: null,
+
+  newGame() {
+
+    Map.newMap(this);
+    this.player = new Player();
+    this.boxs = [];
+    this.targets = [];
+
+    for (var i = 0; i < 3; i++) {
+        this.boxs.push(new Box());
+        this.targets.push(new Target());
+    }
+
+    Screen.clear();
+    this.targets.forEach((e) => {Screen.addEntry(e);});
+    this.boxs.forEach((e) => {Screen.addEntry(e);});
+    Screen.addEntry(this.player);
+  },
+
+  gameover() {
+    this.pause   = true;
+    this.running = false;
+    this.isGameover = true;
+    Screen.display();
+  },
+
+  pauseToggle() {
+    this.pause = !this.pause;
+    if (this.pause || !this.running)
+      clearInterval(this.displayTimer);
+    else
+      this.displayTimer = setInterval(this.tick, this.speed);
+  },
+
+  start() {
+    this.newGame();
+
+    this.running = true;
+
+    // display map
+    Screen.display();
+  }
+};
+
+function keyDown(e) {
+  e = e || window.event;
+  if (!(e.keyCode < 128) || keyBool[e.keyCode] == true)
+    return;
+
+  keyBool[e.keyCode] == true;
+  console.log("keyDown");
+
+  if ([38, 40, 37, 39, 32, 27].indexOf(e.keyCode) > -1)
+    e.preventDefault();
+
+  if (Game.running == true && !Game.pause) {
+    player = Game.player;
+
+    if (e.keyCode == '38') // up
+      player.move(Direction.Up);
+
+    if (e.keyCode == '40') // down
+      player.move(Direction.Down);
+
+    if (e.keyCode == '37') // left
+      player.move(Direction.Left);
+
+    if (e.keyCode == '39') // right
+      player.move(Direction.Right);
+
+  }
+
+  if (e.keyCode == '27') // esc pause
+    Game.pauseToggle();
+
+  if (e.keyCode == '82') // r to restart
+    Game.start();
+
+  Screen.display();
+}
+
+function keyUp(e) {
+  e = e || window.event;
+  if (e.keyCode < 128 && keyBool[e.keyCode] == true)
+    keyBool[e.keyCode] == false;
+
+}
+
+function resize() {
+  var minLength = window.innerWidth < window.innerHeight ? window.innerWidth : window.innerHeight;
+  context.canvas.width = minLength;
+  context.canvas.height = minLength;
+
+  context.scale(context.canvas.width / Screen.width,
+    context.canvas.height / Screen.height);
+}
+
+function load() {
+  // set Screen
+  screen1 = document.getElementById('Screen');
+  context = Screen.context = screen1.getContext('2d');
+
+  resize();
+
+  // init
+  Game.start();
+}
+
+window.onload    = load;
+window.onresize  = resize;
+window.onkeydown = keyDown;
+window.onkeyup   = keyUp;
+</script>
+<div>
+  <ul>
+      <li>"arrow" key, to control direction</li>
+      <li>"r" key to restart game</li>
+      <li>"Esc" key to pause game</li>
+  </ul>
+  <br>
+
+  <br>
+  <a href="https://github.com/r888800009/">r888800009</a>
+</div>
+</body>
+</html>

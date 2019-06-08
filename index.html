@@ -336,57 +336,76 @@ var Game = {
     var cur = {x: player.x, y: player.y};
     var boxsCur = boxs.map((item) => ({x: item.x, y: item.y}));
 
-    var status = this.status;
-    // in status
-    if (status.find((sit) => {
-        return sit.player.x == cur.x && sit.player.y == cur.y &&
-            sit.boxs.every((item) => {
-              return boxsCur.find((curit) => {
-                  return (item.x === curit.x && item.y === curit.y);
-                })
-          })
-      }))
-      return false;
-
-    status.push({
-      player: {x: cur.x, y: cur.y},
-      boxs: boxsCur.map(item => ({...item}))
-    });
-
     // all boxs puted
     if (Map.isWin()) {
-      console.log(this.path);
-      if (this.shortpath === null || this.shortpath.length > this.path.length)
+      console.log(this.path.length);
+      if (this.shortpath === null || this.shortpath.length > this.path.length) {
         this.shortpath = this.path.slice();
-      console.log("win");
+        console.log("win");
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    var status = this.status;
+    // in status
+    var foundStatus;
+    var curStatus;
+    if (foundStatus = status.find((sit) => {
+        return sit.player.x == cur.x && sit.player.y == cur.y &&
+            sit.boxs.every((item) => {
+                return boxsCur.find((curit) => item.x == curit.x && item.y == curit.y);
+              })
+    })) {
+      if (foundStatus.nextRightWay == null || foundStatus.length < this.path.length)
+        return false;
+      var next = foundStatus.nextRightWay;
+      player.move(Direction[next])
+      this.path.push(next);
+      this.dfs()
+      this.path.pop();
+
+      // recover cur and boxs
+      player.setXY(cur);
+      boxs.forEach((item, i) => item.setXY(boxsCur[i]));
+
+      foundStatus.length = this.path.length;
       return true;
+    } else {
+
+      curStatus = {
+        player: {x: cur.x, y: cur.y},
+        boxs: boxsCur.map(item => ({...item})),
+        length: 0,
+        nextRightWay: null
+      };
+
+      status.push(curStatus);
     }
 
     // all direction
     var result = false;
     for (var it in Direction) {
       var next = Direction[it];
-      this.path.push(it);
       // next pos can move
       if (player.move(next)) {
-        if (result == false)
-          result = this.dfs();
-        else
-          this.dfs();
+
+        this.path.push(it);
+        if (this.dfs()) {
+          result = true;
+          curStatus.nextRightWay = it;
+        }
+
+        this.path.pop();
 
         // recover cur and boxs
         player.setXY(cur);
-
         boxs.forEach((item, i) => item.setXY(boxsCur[i]));
-
       }
 
-      /*if (result == true) {
-        return true;
-      }*/
-      this.path.pop();
     }
-
+    curStatus.length = this.path.length;
     return result;
   },
 
@@ -403,6 +422,8 @@ var Game = {
   },
 
   showShortpath() {
+    if (this.shortpath === null)
+      return;
     var traversing = setInterval(() => {
       this.player.move(Direction[this.shortpath.shift()]);
       Screen.display();

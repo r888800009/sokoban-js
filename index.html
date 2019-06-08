@@ -135,7 +135,7 @@ class Map  {
     // filtering an empty block
     for (var x = 0; x < this.width; x++) {
       for (var y = 0; y < this.height; y++) {
-        if (typeof entrys.find((item) => 
+        if (typeof entrys.find((item) =>
           item !== null && item.x === x && item.y === y
           ) === 'undefined' && this.walls[x][y] != 1 &&
           !this.onTarget({x: x, y: y})
@@ -338,8 +338,8 @@ var Game = {
 
     // all boxs puted
     if (Map.isWin()) {
-      console.log(this.path.length);
       if (this.shortpath === null || this.shortpath.length > this.path.length) {
+        console.log(this.path.length);
         this.shortpath = this.path.slice();
         console.log("win");
         return true;
@@ -349,6 +349,8 @@ var Game = {
     }
 
     var status = this.status;
+
+    var result = false;
     // in status
     var foundStatus;
     var curStatus;
@@ -360,20 +362,10 @@ var Game = {
     })) {
       if (foundStatus.nextRightWay == null || foundStatus.length < this.path.length)
         return false;
-      var next = foundStatus.nextRightWay;
-      player.move(Direction[next])
-      this.path.push(next);
-      this.dfs()
-      this.path.pop();
 
-      // recover cur and boxs
-      player.setXY(cur);
-      boxs.forEach((item, i) => item.setXY(boxsCur[i]));
-
-      foundStatus.length = this.path.length;
-      return true;
+      result = true;
+      curStatus = foundStatus;
     } else {
-
       curStatus = {
         player: {x: cur.x, y: cur.y},
         boxs: boxsCur.map(item => ({...item})),
@@ -385,7 +377,6 @@ var Game = {
     }
 
     // all direction
-    var result = false;
     for (var it in Direction) {
       var next = Direction[it];
       // next pos can move
@@ -403,8 +394,8 @@ var Game = {
         player.setXY(cur);
         boxs.forEach((item, i) => item.setXY(boxsCur[i]));
       }
-
     }
+
     curStatus.length = this.path.length;
     return result;
   },

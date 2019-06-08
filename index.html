@@ -360,7 +360,7 @@ var Game = {
                 return boxsCur.find((curit) => item.x == curit.x && item.y == curit.y);
               })
     })) {
-      if (foundStatus.nextRightWay == null || foundStatus.length < this.path.length)
+      if (foundStatus.done == false || foundStatus.length < this.path.length)
         return false;
 
       result = true;
@@ -370,7 +370,7 @@ var Game = {
         player: {x: cur.x, y: cur.y},
         boxs: boxsCur.map(item => ({...item})),
         length: 0,
-        nextRightWay: null
+        done: false
       };
 
       status.push(curStatus);
@@ -385,7 +385,7 @@ var Game = {
         this.path.push(it);
         if (this.dfs()) {
           result = true;
-          curStatus.nextRightWay = it;
+          curStatus.done = true;
         }
 
         this.path.pop();
@@ -459,7 +459,10 @@ function keyDown(e) {
     Game.pauseToggle();
 
   if (e.keyCode == '82') // r to restart
-    Game.start();
+    Game.startWithSolve();
+
+  if (e.keyCode == '83') // r to show path
+    Game.showShortpath();
 
   Screen.display();
 }
@@ -488,7 +491,7 @@ function load() {
   resize();
 
   // init
-  Game.start();
+  Game.startWithSolve();
 }
 
 window.onload    = load;
@@ -500,6 +503,7 @@ window.onkeyup   = keyUp;
   <ul>
       <li>"arrow" key, to control direction</li>
       <li>"r" key to restart game</li>
+      <li>"s" key to show path</li>
       <li>"Esc" key to pause game</li>
   </ul>
   <br>

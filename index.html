@@ -336,16 +336,17 @@ var Game = {
     var cur = {x: player.x, y: player.y};
     var boxsCur = boxs.map((item) => ({x: item.x, y: item.y}));
 
+    if (this.shortpath !== null && this.shortpath.length < this.path.length)
+      return false;
+
     // all boxs puted
     if (Map.isWin()) {
       if (this.shortpath === null || this.shortpath.length > this.path.length) {
         console.log(this.path.length);
         this.shortpath = this.path.slice();
         console.log("win");
-        return true;
-      } else {
-        return false;
       }
+      return true;
     }
 
     var status = this.status;
@@ -356,8 +357,8 @@ var Game = {
     var curStatus;
     if (foundStatus = status.find((sit) => {
         return sit.player.x == cur.x && sit.player.y == cur.y &&
-            sit.boxs.every((item) => {
-                return boxsCur.find((curit) => item.x == curit.x && item.y == curit.y);
+            sit.boxs.every((item, i) => {
+                return item.x == boxsCur[i].x && item.y == boxsCur[i].y;
               })
     })) {
       if (foundStatus.done == false || foundStatus.length < this.path.length)
